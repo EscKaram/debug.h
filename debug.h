@@ -173,6 +173,12 @@ namespace camillus {
     template<typename T>
     string printMapped(const T &A);
 
+    template <class T, size_t... I>
+    string printTuple(const T& A, std::index_sequence<I...>);
+
+    template <class... T>
+    string print(const std::tuple<T...>& A);
+
     template<typename... Args>
     string print(const vector<Args...> &A);
 
@@ -285,6 +291,20 @@ namespace camillus {
         return res;
     }
 
+    template <class T, size_t... I>
+    string printTuple(const T& A, std::index_sequence<I...>) {
+        stringstream s;
+        s << '(';
+        (..., (s << (I == 0 ? "" : ", ") << print(get<I>(A))));
+        s << ')';
+        return s.str();
+    }
+
+    template <class... T>
+    string print(const std::tuple<T...>& A) {
+        return printTuple(A, std::make_index_sequence<sizeof...(T)>());
+    }
+
     template<typename... Args>
     string print(const vector<Args...> &A) {
         string res = camillus::printIterable(A);
@@ -387,18 +407,3 @@ namespace camillus {
 }  // namespace camillus
 
 #define debug(x...) cout << camillus::highlighted((string)"$ " + #x + camillus::get(x)) << endl
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/// @note I want 404 rows in code
