@@ -1,4 +1,5 @@
 /// @author Camillus
+#pragma once
 #include <bits/stdc++.h>
 #include <ext/pb_ds/assoc_container.hpp>
 
@@ -7,14 +8,14 @@ using namespace std;
 namespace camillus {
 
     namespace colors {
-        const string black = "\e[30m";
-        const string red = "\e[31m";
-        const string green = "\e[32m";
-        const string yellow = "\e[33m";
-        const string blue = "\e[34m";
-        const string purple = "\e[35m";
-        const string cyan = "\e[36m";
-        const string none = "\e[0m";
+        static const string black = "\033[30m";
+        static const string red = "\033[31m";
+        static const string green = "\033[32m";
+        static const string yellow = "\033[33m";
+        static const string blue = "\033[34m";
+        static const string purple = "\033[35m";
+        static const string cyan = "\033[36m";
+        static const string none = "\033[0m";
     }  // namespace colors
 
 /// @attention you can change colors here
@@ -35,26 +36,35 @@ namespace camillus {
         bool in_number = false;
 
         string result;
+
+        auto set_color = [&result](const string &color) {
+#ifdef WINDOWS
+
+#else
+            result += color;
+#endif
+        };
+
         for (unsigned int i = 0; i < expr.size(); i++) {
             if (!in_number && !in_char && !in_string && isdigit(expr[i]) && i > 1 &&
                 !(isalnum(expr[i - 1]) || expr[i - 1] == '_')) {
-                result += number_color;
+                set_color(number_color);
                 in_number = true;
             }
 
             if (in_number && expr[i] != '.' && expr[i] != '\'' && expr[i] != 'e' && !isdigit(expr[i])) {
                 in_number = false;
-                result += colors::none;
+                set_color(colors::none);
             }
 
             if (expr[i] == '\'' && !in_string && !in_number) {
                 if (in_char) {
                     in_char = false;
                     result += expr[i];
-                    result += colors::none;
+                    set_color(colors::none);
                 } else {
                     in_char = true;
-                    result += char_color;
+                    set_color(char_color);
                     result += expr[i];
                 }
                 continue;
@@ -64,10 +74,10 @@ namespace camillus {
                 if (in_string) {
                     in_string = false;
                     result += expr[i];
-                    result += colors::none;
+                    set_color(colors::none);
                 } else {
                     in_string = true;
-                    result += string_color;
+                    set_color(string_color);
                     result += expr[i];
                 }
                 continue;
@@ -91,35 +101,75 @@ namespace camillus {
                 current_color = variable_color;
             }
 
-            result += current_color;
+            set_color(current_color);
             result += expr[i];
-            result += colors::none;
+            set_color(colors::none);
         }
-        result += colors::none;
+        set_color(colors::none);
         return result;
     }
 
-/// @brief basic types
+    template <typename, typename = void>
+    constexpr bool is_iterable{};
+
+    template <typename T>
+    constexpr bool is_iterable<
+            T,
+            std::void_t< decltype(std::declval<T>().begin()),
+                    decltype(std::declval<T>().end())
+            >
+    > = true;
+
+    template<typename T> concept IS_ITERABLE = is_iterable<T>;
+    template<typename T> concept IS_ARRAY = is_array<T>()();
+
+/// @brief declarations
+
     template<typename T>
-    string print(const T &A) {
-        stringstream s;
-        s << A;
-        return s.str();
-    }
+    string print(const T &A);
 
-    string print(const string &A) {
-        return '\"' + A + '\"';
-    }
+    template<IS_ITERABLE T>
+    string print(const T &A);
 
-    string print(const char A[]) {
-        return camillus::print((string) A);
-    }
+    template<IS_ARRAY T>
+    string print(const T &A);
+
+    template <class T, size_t... I>
+    string printTuple(const T& A, std::index_sequence<I...>);
+
+    template <class... T>
+    string print(const std::tuple<T...>& A);
+
+    template<typename... Args>
+    string print(const pair<Args...> &A);
+
+/// @brief basic types
 
     string print(const char &A) {
         string res;
         res += '\'';
         res += A;
         res += '\'';
+        return res;
+    }
+
+    string print(const unsigned char &A) {
+        return print(static_cast<short>(A));
+    }
+
+    string print(const string &A) {
+        string res;
+        res += '\"';
+        res += A;
+        res += '\"';
+        return res;
+    }
+
+    string print(const char *A) {
+        string res;
+        res += '\"';
+        res += A;
+        res += '\"';
         return res;
     }
 
@@ -157,139 +207,7 @@ namespace camillus {
 
 #endif
 
-/// @brief declarations
-    template<typename... Args>
-    string print(const pair<Args...> &A);
-
-    template<typename T, size_t N>
-    string print(const T (&A)[N]);
-
-    template<typename T, size_t N>
-    string print(const array<T, N> &A);
-
-    template<typename T>
-    string printIterable(const T &A);
-
-    template<typename T>
-    string printMapped(const T &A);
-
-    template <class T, size_t... I>
-    string printTuple(const T& A, std::index_sequence<I...>);
-
-    template <class... T>
-    string print(const std::tuple<T...>& A);
-
-    template<typename... Args>
-    string print(const vector<Args...> &A);
-
-    template<typename... Args>
-    string print(const deque<Args...> &A);
-
-    template<typename... Args>
-    string print(stack<Args...> A);
-
-    template<typename T, typename... Args>
-    string print(priority_queue<T, Args...> A);
-
-    template<typename... Args>
-    string print(const set<Args...> &A);
-
-    template<typename... Args>
-    string print(const unordered_set<Args...> &A);
-
-    template<typename key, typename comp>
-    string
-    print(const __gnu_pbds::tree<key, __gnu_pbds::null_type, comp, __gnu_pbds::rb_tree_tag, __gnu_pbds::tree_order_statistics_node_update> &A);
-
-    template<typename key, typename mapped, typename comp>
-    string
-    print(const __gnu_pbds::tree<key, mapped, comp, __gnu_pbds::rb_tree_tag, __gnu_pbds::tree_order_statistics_node_update> &A);
-
-    template<typename... Args>
-    string print(const map<Args...> &A);
-
-    template<typename... Args>
-    string print(const unordered_map<Args...> &A);
-
-    template<typename... Args>
-    string print(const __gnu_pbds::gp_hash_table<Args...> &A);
-
-    template<typename... Args>
-    string print(const __gnu_pbds::cc_hash_table<Args...> &A);
-
 /// @brief definitions
-    template<typename... Args>
-    string print(const pair<Args...> &A) {
-        string res;
-        res += '(';
-        res += camillus::print(A.first);
-        res += ", ";
-        res += camillus::print(A.second);
-        res += ')';
-        return res;
-    }
-
-    template<typename T, size_t N>
-    string print(const T (&A)[N]) {
-        string res;
-        res += '[';
-        for (size_t i = 0; i < N; i++) {
-            res += camillus::print(A[i]);
-            if (i + 1 == N) {
-                res += ']';
-            } else {
-                res += ", ";
-            }
-        }
-        return res;
-    }
-
-    template<typename T, size_t N>
-    string print(const array<T, N> &A) {
-        string res;
-        res += '[';
-        for (size_t i = 0; i < N; i++) {
-            res += camillus::print(A[i]);
-            if (i + 1 == N) {
-                res += ']';
-            } else {
-                res += ", ";
-            }
-        }
-        return res;
-    }
-
-    template<typename T>
-    string printIterable(const T &A) {
-        string res;
-        res += '{';
-        for (auto it = A.begin(); it != A.end(); it++) {
-            res += camillus::print(*it);
-            if (next(it) != A.end()) {
-                res += ", ";
-            }
-        }
-        res += '}';
-        return res;
-    }
-
-    template<typename T>
-    string printMapped(const T &A) {
-        string res;
-        res += "{\n";
-        for (auto it = A.begin(); it != A.end(); it++) {
-            res += '\t';
-            res += camillus::print(it->first);
-            res += ":\t";
-            res += camillus::print(it->second);
-            if (next(it) == A.end()) {
-                res += "\n}";
-            } else {
-                res += ",\n";
-            }
-        }
-        return res;
-    }
 
     template <class T, size_t... I>
     string printTuple(const T& A, std::index_sequence<I...>) {
@@ -306,85 +224,47 @@ namespace camillus {
     }
 
     template<typename... Args>
-    string print(const vector<Args...> &A) {
-        string res = camillus::printIterable(A);
-        res.front() = '[';
-        res.back() = ']';
-        return res;
+    string print(const pair<Args...> &A) {
+        return '(' + print(A.first) + ", " + print(A.second) + ')';
     }
 
-    template<typename... Args>
-    string print(const deque<Args...> &A) {
-        string res = camillus::printIterable(A);
-        res.front() = '[';
-        res.back() = ']';
-        return res;
-    }
-
-    template<typename T, typename... Args>
-    string print(stack<T, Args...> A) {
-        if (A.empty()) {
-            return "[]";
+    template<IS_ITERABLE T>
+    string print(const T &A) {
+        string res;
+        res += '{';
+        for (const auto &item : A) {
+            res += print(item);
+            res += ", ";
         }
-        vector<T> B;
-        while (!A.empty()) {
-            B.push_back(A.top());
-            A.pop();
-        }
-        reverse(B.begin(), B.end());
-        return camillus::print(B);
-    }
-
-    template<typename T, typename... Args>
-    string print(priority_queue<T, Args...> A) {
-        if (A.empty()) {
-            return "{}";
-        }
-        vector<T> B;
-        while (!A.empty()) {
-            B.push_back(A.top());
-            A.pop();
-        }
-        reverse(B.begin(), B.end());
-        string res = camillus::print(B);
-        res.front() = '{';
+        res.pop_back();
         res.back() = '}';
         return res;
     }
 
-    template<typename... Args>
-    string print(const set<Args...> &A) {
-        return camillus::printIterable(A);
+    template<IS_ARRAY T>
+    string print(const T &A) {
+        string res;
+        res += '{';
+        for (const auto &item : A) {
+            res += print(item);
+            res += ", ";
+        }
+        res.pop_back();
+        res.back() = '}';
+        return res;
     }
 
-    template<typename... Args>
-    string print(const unordered_set<Args...> &A) {
-        return camillus::printIterable(A);
-    }
-
-    template<typename key, typename comp>
-    string
-    print(const __gnu_pbds::tree<key, __gnu_pbds::null_type, comp, __gnu_pbds::rb_tree_tag, __gnu_pbds::tree_order_statistics_node_update> &A) {
-        return camillus::printIterable(A);
-    }
-
-    template<typename key, typename mapped, typename comp>
-    string
-    print(const __gnu_pbds::tree<key, mapped, comp, __gnu_pbds::rb_tree_tag, __gnu_pbds::tree_order_statistics_node_update> &A) {
-        return camillus::printMapped(A);
-    }
-
-    template<typename... Args>
-    string print(const __gnu_pbds::gp_hash_table<Args...> &A) {
-        return camillus::printMapped(A);
-    }
-
-    template<typename... Args>
-    string print(const __gnu_pbds::cc_hash_table<Args...> &A) {
-        return camillus::printMapped(A);
+    template<typename T>
+    string print(const T &A) {
+        return (stringstream() << A).str();
     }
 
 /// @brief many arguments
+
+    string print() {
+        return "\b\b\b\b";
+    }
+
     template<typename T, typename... Args>
     string print(const T &first, const Args &... args) {
         if (sizeof...(args)) {
@@ -393,17 +273,6 @@ namespace camillus {
             return camillus::print(first);
         }
     }
-
-    string get() {
-        return "";
-    }
-
-    template<typename... Args>
-    string get(const Args &... args) {
-        if (sizeof...(args)) {
-            return (string) " = " + camillus::print(args...);
-        }
-    }
 }  // namespace camillus
 
-#define debug(x...) cout << camillus::highlighted((string)"$ " + #x + camillus::get(x)) << endl
+#define debug(x...) cout << camillus::highlighted((stringstream() << "$ " << #x << " = " << camillus::print(x)).str()) << endl
